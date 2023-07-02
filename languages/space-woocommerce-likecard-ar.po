@@ -1,0 +1,102 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Space Woocommerce Like4Card Integeration\n"
+"POT-Creation-Date: 2023-07-02 16:35+0300\n"
+"PO-Revision-Date: 2023-07-02 16:38+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.3.2\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-Flags-xgettext: --add-comments=translators:\n"
+"X-Poedit-WPHeader: woocommerce-likecard.php\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;"
+"_n_noop:1,2;_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.min.js\n"
+"X-Poedit-SearchPathExcluded-1: vendor\n"
+
+#: src/AdminSettings.php:18
+msgid "Likecard"
+msgstr "لايك كارد"
+
+#: src/AdminSettings.php:44
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+#: src/AdminSettings.php:51
+msgid "Device Id"
+msgstr "معرف الجهاز"
+
+#: src/AdminSettings.php:58
+msgid "Security Code"
+msgstr "رمز الأمان"
+
+#: src/AdminSettings.php:65
+msgid "Password"
+msgstr "كلمة المرور"
+
+#: src/AdminSettings.php:72
+msgid "Phone"
+msgstr "الهاتف"
+
+#: src/AdminSettings.php:79
+msgid "Hash Key"
+msgstr "‫Hash Key"
+
+#: src/AdminSettings.php:86
+msgid "Secret Key"
+msgstr "‫Secret Key"
+
+#: src/AdminSettings.php:93
+msgid "Secret IV"
+msgstr "‫Secret IV"
+
+#: src/LikeCardApi.php:51 src/Woocommerce.php:114 src/Woocommerce.php:123
+#: src/Woocommerce.php:126
+msgid "Error in ordering"
+msgstr "خطأ في الطلب"
+
+#: src/ProductFields.php:18
+msgid "like_metabox"
+msgstr "like_metabox"
+
+#: src/ProductFields.php:19
+msgid "Like Metabox"
+msgstr "لايك ميتابوكس"
+
+#: src/ProductFields.php:23
+msgid "Like Card Ref. ID"
+msgstr "مثل معرف مرجع البطاقة"
+
+#: src/ProductFields.php:24
+msgid "likecard_id"
+msgstr "likecard_id"
+
+#: src/Woocommerce.php:70
+#, php-format
+msgid "Serial for %s is: %s and it's valid to %s"
+msgstr "الكود ل %s هو: %s وهو صالح %s"
+
+#: src/Woocommerce.php:83
+#, php-format
+msgid "Serial for %s is: <span>%s</span> valid to %s"
+msgstr "الكود ل هو: <span>%s</span> صالح ل %s%s"
+
+#. Plugin Name of the plugin/theme
+msgid "Space Woocommerce Like4Card Integeration"
+msgstr "سبيس ووكومرس مع لايك فور كارد"
+
+#. Plugin URI of the plugin/theme
+#. Author URI of the plugin/theme
+msgid "https://sz4h.com/"
+msgstr "‫https://sz4h.com/"
+
+#. Author of the plugin/theme
+msgid "Ahmed Safaa"
+msgstr "احمد صفاء"
