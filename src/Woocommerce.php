@@ -74,8 +74,8 @@ class Woocommerce {
 
 	}
 
-	public function woocommerce_order_details_after_order_table( $order_id ): void {
-		$serials = get_post_meta( $order_id,'serials' );
+	public function woocommerce_order_details_after_order_table( $order ): void {
+		$serials = get_post_meta( $order->get_id(),'serials' );
 		if ( ! $serials ) {
 			return;
 		}
