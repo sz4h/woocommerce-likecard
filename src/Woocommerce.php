@@ -69,15 +69,13 @@ class Woocommerce {
 				$serials = [ 'name' => $name, 'serial' => $code, 'valid' => @$serial['validTo'] ];
 				$order->add_order_note( sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $name, $code, @$serial['validTo'] ) );
 			}
-			$order->add_meta_data( 'serials', $serials );
+			add_post_meta( $order_id, 'serials', $serials);
 		}
 
 	}
 
 	public function woocommerce_view_order( $order_id ): void {
-		$order = wc_get_order( $order_id );
-
-		$serials = $order->get_meta( 'serials' );
+		$serials = get_post_meta( $order_id,'serials' );
 		if ( ! $serials ) {
 			return;
 		}
