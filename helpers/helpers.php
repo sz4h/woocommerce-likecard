@@ -8,7 +8,9 @@ if (!function_exists( 'dd')) {
 	 * @return void
 	 */
 	#[NoReturn] function dd( mixed $value ): void {
-		echo  '<pre>' . var_dump( $value) .'</pre>';
+		echo  '<pre>';
+		echo var_dump( $value);
+		echo '</pre>';
 		die();
 	}
 }

@@ -43,13 +43,14 @@ class LikeCardApi {
 				'cookies'     => $cookies
 			)
 		);
-		dd( $response );
 
 		if ( ! is_wp_error( $response ) ) {
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-			if ( is_null( $body ) || ! isset( $body['response'] ) || $body['response'] !== 0 ) {
-				throw new ApiException( __( 'Error in ordering', SPWL_TD ) );
+
+			if ( is_null( $body ) || ! isset( $body['response'] ) || $body['response'] !== 1 ) {
+				throw new ApiException( __( 'Error in ordering', SPWL_TD ) . ' No response'  );
 			}
+	
 
 			return $body;
 		} else {

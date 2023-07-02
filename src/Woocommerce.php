@@ -98,7 +98,7 @@ class Woocommerce {
 
 
 			if ( ! @$response['data'] ) {
-				throw new Exception( __( 'Error in ordering', SPWL_TD ) );
+				throw new Exception( __( 'Error in ordering', SPWL_TD ) . ' No data' );
 			}
 			$names = [];
 			foreach ( $response['data'] as $product ) {
