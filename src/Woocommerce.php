@@ -13,7 +13,7 @@ class Woocommerce {
 		$this->createApiInstance();
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
 		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 10, 1 );
-
+		add_action( 'woocommerce_view_order', [ $this, 'woocommerce_view_order' ] );
 	}
 
 	/**
@@ -60,15 +60,30 @@ class Woocommerce {
 			if ( ! isset( $response['serials'] ) || ! count( (array) $response['serials'] ) ) {
 				return;
 			}
-			$order = wc_get_order( $order_id );
+			$order   = wc_get_order( $order_id );
+			$serials = [];
 			foreach ( $response['serials'] as $serial ) {
 				$code    = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
 				$product = $cartItem['data'];
 				$name    = $product ? $product->get_name() : '';
+				$serials = [ 'name' => $name, 'serial' => $code, 'valid' => @$serial['validTo'] ];
 				$order->add_order_note( sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $name, $code, @$serial['validTo'] ) );
 			}
+			$order->add_meta_data( 'serials', $serials );
 		}
 
+	}
+
+	public function woocommerce_view_order( $order_id ): void {
+		$order = wc_get_order( $order_id );
+
+		$serials = $order->get_meta( 'serials' );
+		if ( ! $serials ) {
+			return;
+		}
+		foreach ( $serials as $serial ) {
+			echo sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $serial['name'], $serial['code'], $serial['valid'] );
+		}
 	}
 
 	protected function failed( array $errors, bool $refresh = false, bool $reload = false ): void {
