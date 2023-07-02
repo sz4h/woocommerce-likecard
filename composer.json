@@ -5,7 +5,10 @@
     "autoload": {
         "psr-4": {
             "Sz4h\\WoocommerceLikecard\\": "src/"
-        }
+        },
+        "files": [
+            "helpers/helpers.php"
+        ]
     },
     "authors": [
         {
@@ -13,5 +16,7 @@
             "email": "ahmed@sz4h.com"
         }
     ],
-    "require": {}
+    "require": {
+        "cmb2/cmb2": "^2.10"
+    }
 }
