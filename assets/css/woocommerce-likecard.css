@@ -5,3 +5,7 @@
     background: #eee;
     text-align: center;
 }
+.box span {
+    font-weight: bold;
+    display: block;
+}
