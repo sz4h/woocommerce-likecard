@@ -17,6 +17,8 @@ class LikeCardApi {
 	private int $langId = 1;
 	private string $phone = '';
 	private string $hashKey = '';
+	private string $secretKey;
+	private string $secretIv;
 
 
 	/**
@@ -41,11 +43,12 @@ class LikeCardApi {
 				'cookies'     => $cookies
 			)
 		);
+		dd( $response );
 
 		if ( ! is_wp_error( $response ) ) {
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( is_null( $body ) || ! isset( $body['response'] ) || $body['response'] !== 0 ) {
-				throw new ApiException( __('Error in ordering',SPWL_TD) );
+				throw new ApiException( __( 'Error in ordering', SPWL_TD ) );
 			}
 
 			return $body;
@@ -56,12 +59,25 @@ class LikeCardApi {
 	}
 
 
-	function generateHash($time): string {
-		$email = strtolower($this->get_email());
+	function generateHash( $time ): string {
+		$email = strtolower( $this->get_email() );
 		$phone = $this->get_phone();
-		$key = $this->get_hash_key();
-		return hash('sha256',$time.$email.$phone.$key);
+		$key   = $this->get_hash_key();
+
+		return hash( 'sha256', $time . $email . $phone . $key );
 	}
+
+
+	function decryptSerial( string $encrypted_txt ): string {
+		$encrypt_method = 'AES-256-CBC';
+		$key            = hash( 'sha256', $this->get_secret_key() );
+
+		//iv - encrypt method AES-256-CBC expects 16 bytes - else you will get a warning
+		$iv = substr( hash( 'sha256', $this->get_secret_iv() ), 0, 16 );
+
+		return openssl_decrypt( base64_decode( $encrypted_txt ), $encrypt_method, $key, 0, $iv );
+	}
+
 	/**
 	 * @return string
 	 */
@@ -180,6 +196,7 @@ class LikeCardApi {
 	 */
 	public function set_lang_id( int $langId ): LikeCardApi {
 		$this->langId = $langId;
+
 		return $this;
 	}
 
@@ -197,6 +214,7 @@ class LikeCardApi {
 	 */
 	public function set_phone( string $phone ): LikeCardApi {
 		$this->phone = $phone;
+
 		return $this;
 	}
 
@@ -214,6 +232,41 @@ class LikeCardApi {
 	 */
 	public function set_hash_key( string $hashKey ): LikeCardApi {
 		$this->hashKey = $hashKey;
+
+		return $this;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function get_secret_key(): string {
+		return $this->secretKey;
+	}
+
+	/**
+	 * @param string $secretKey
+	 *
+	 * @return LikeCardApi
+	 */
+	public function set_secret_key( string $secretKey ): LikeCardApi {
+		$this->secretKey = $secretKey;
+		return $this;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function get_secret_iv(): string {
+		return $this->secretIv;
+	}
+
+	/**
+	 * @param string $secretIv
+	 *
+	 * @return LikeCardApi
+	 */
+	public function set_secret_iv( string $secretIv ): LikeCardApi {
+		$this->secretIv = $secretIv;
 		return $this;
 	}
 }

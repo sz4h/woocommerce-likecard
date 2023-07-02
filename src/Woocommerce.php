@@ -62,9 +62,10 @@ class Woocommerce {
 			}
 			$order = wc_get_order( $order_id );
 			foreach ( $response['serials'] as $serial ) {
+				$code    = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
 				$product = $cartItem['data'];
 				$name    = $product ? $product->get_name() : '';
-				$order->add_order_note( sprintf( __( 'Serial for %s is: %s' ), $name, @$serial['serialCode'] ) );
+				$order->add_order_note( sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $name, $code, @$serial['validTo'] ) );
 			}
 		}
 
@@ -128,6 +129,8 @@ class Woocommerce {
 			->set_device_id( $options['deviceId'] )
 			->set_phone( $options['phone'] )
 			->set_security_code( $options['securityCode'] )
-			->set_hash_key( $options['hashKey'] );
+			->set_hash_key( $options['hashKey'] )
+			->set_secret_key( $options['secretKey'] )
+			->set_secret_iv( $options['secretIv'] );
 	}
 }
