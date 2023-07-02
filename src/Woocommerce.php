@@ -80,7 +80,7 @@ class Woocommerce {
 			return;
 		}
 		foreach ( $serials as $serial ) {
-			echo sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $serial['name'], $serial['code'], $serial['valid'] );
+			echo sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $serial['name'], $serial['serial'], $serial['valid'] );
 		}
 	}
 
