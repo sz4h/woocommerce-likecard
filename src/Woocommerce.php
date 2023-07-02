@@ -12,8 +12,8 @@ class Woocommerce {
 	public function __construct() {
 		$this->createApiInstance();
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
-		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 10, 1 );
-		add_action( 'woocommerce_view_order', [ $this, 'woocommerce_view_order' ] );
+		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
+		add_action( 'woocommerce_view_order', [ $this, 'woocommerce_view_order' ],10,1 );
 	}
 
 	/**
