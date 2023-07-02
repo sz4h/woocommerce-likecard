@@ -13,7 +13,7 @@ class Woocommerce {
 		$this->createApiInstance();
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
 		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
-		add_action( 'woocommerce_view_order', [ $this, 'woocommerce_view_order' ],10,1 );
+		add_action( 'woocommerce_order_details_after_order_table', [ $this, 'woocommerce_order_details_after_order_table' ],10,1 );
 	}
 
 	/**
@@ -74,13 +74,13 @@ class Woocommerce {
 
 	}
 
-	public function woocommerce_view_order( $order_id ): void {
+	public function woocommerce_order_details_after_order_table( $order_id ): void {
 		$serials = get_post_meta( $order_id,'serials' );
 		if ( ! $serials ) {
 			return;
 		}
 		foreach ( $serials as $serial ) {
-			echo sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $serial['name'], $serial['serial'], $serial['valid'] );
+			echo '<div class="box">' . sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $serial['name'], $serial['serial'], $serial['valid'] ) . '</div>';
 		}
 	}
 
