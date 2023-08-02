@@ -1,15 +1,15 @@
-<?php
-use JetBrains\PhpStorm\NoReturn;
+<?php /** @noinspection PhpNoReturnAttributeCanBeAddedInspection */
 
-if (!function_exists( 'dd')) {
+
+if ( ! function_exists( 'dd' ) ) {
 	/**
 	 * @param mixed $value
 	 *
 	 * @return void
 	 */
-	#[NoReturn] function dd( mixed $value ): void {
-		echo  '<pre>';
-		echo var_dump( $value);
+	function dd( mixed $value ): void {
+		echo '<pre>';
+		var_dump( $value );
 		echo '</pre>';
 		die();
 	}
