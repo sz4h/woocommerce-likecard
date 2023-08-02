@@ -4,6 +4,7 @@ namespace Sz4h\WoocommerceLikecard;
 
 use Exception;
 use Sz4h\WoocommerceLikecard\Exception\ApiException;
+use WC_Product;
 
 class Woocommerce {
 
@@ -26,7 +27,7 @@ class Woocommerce {
 		if ( $likeCardId === 0 ) {
 			return;
 		}
-		$this->getPorductsAvailablity( [ $likeCardId ], $product );
+		$this->getProductsAvailability( [ $likeCardId ], $product );
 	}
 
 	/**
@@ -41,7 +42,7 @@ class Woocommerce {
 		$likeCardIds = array_filter( $likeCardIds );
 		if ( count( $likeCardIds ) ) {
 			try {
-				$this->getPorductsAvailablity( $likeCardIds );
+				$this->getProductsAvailability( $likeCardIds );
 			} catch ( Exception $e ) {
 				$this->failed( [ $e->getMessage() ] );
 			}
@@ -98,12 +99,12 @@ class Woocommerce {
 
 	/**
 	 * @param array $ids
-	 * @param bool|\WC_Product|null $product
+	 * @param bool|WC_Product|null $product
 	 *
 	 * @return void
 	 * @throws Exception
 	 */
-	public function getPorductsAvailablity( array $ids, bool|\WC_Product|null $product = null ): void {
+	public function getProductsAvailability( array $ids, mixed $product = null ): void {
 		try {
 			$response = $this->likecard_api->post( 'products', [
 				'ids' => $ids
