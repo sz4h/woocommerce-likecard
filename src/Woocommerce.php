@@ -67,7 +67,7 @@ class Woocommerce {
 				$product = $cartItem['data'];
 				$name    = $product ? $product->get_name() : '';
 				$serials = [ 'name' => $name, 'serial' => $code, 'valid' => @$serial['validTo'] ];
-				$order->add_order_note( sprintf( __( 'Serial for %s is: %s and it\'s valid to %s' ), $name, $code, @$serial['validTo'] ) );
+				$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $name, $code, @$serial['validTo'] ) );
 			}
 			add_post_meta( $order_id, 'serials', $serials);
 		}
@@ -80,7 +80,7 @@ class Woocommerce {
 			return;
 		}
 		foreach ( $serials as $serial ) {
-			echo '<div class="box">' . sprintf( __( 'Serial for %s is: <span>%s</span> valid to %s' ), $serial['name'], $serial['serial'], $serial['valid'] ) . '</div>';
+			echo '<div class="box">' . sprintf( __( 'Code for %s is: <span>%s</span> valid to %s',SPWL_TD ), $serial['name'], $serial['serial'], $serial['valid'] ) . '</div>';
 		}
 	}
 

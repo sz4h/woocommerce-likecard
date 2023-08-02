@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Space Woocommerce Like4Card Integeration\n"
-"POT-Creation-Date: 2023-07-02 16:35+0300\n"
-"PO-Revision-Date: 2023-07-02 16:40+0300\n"
+"POT-Creation-Date: 2023-08-02 10:43+0300\n"
+"PO-Revision-Date: 2023-08-02 10:45+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ar\n"
@@ -80,13 +80,13 @@ msgstr "likecard_id"
 
 #: src/Woocommerce.php:70
 #, php-format
-msgid "Serial for %s is: %s and it's valid to %s"
-msgstr "الكود ل %s هو: %s وهو صالح %s"
+msgid "Code for %s is: %s and it's valid to %s"
+msgstr "‪‪كود %s هو: %s صالح لغاية %s"
 
 #: src/Woocommerce.php:83
 #, php-format
-msgid "Serial for %s is: <span>%s</span> valid to %s"
-msgstr "الكود ل هو: <span>%s</span> صالح ل %s%s"
+msgid "Code for %s is: <span>%s</span> valid to %s"
+msgstr "‪كود %s هو : <span>%s</span> صالح لغاية %s"
 
 #. Plugin Name of the plugin/theme
 msgid "Space Woocommerce Like4Card Integeration"
