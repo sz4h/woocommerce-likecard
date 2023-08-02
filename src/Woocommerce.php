@@ -124,7 +124,7 @@ class Woocommerce {
 				throw new Exception( __( 'Error in ordering', SPWL_TD ) . ' (' . implode( ',', $names ) . ').' );
 			}
 		} catch ( ApiException $e ) {
-			throw new Exception( __( 'Error in ordering', SPWL_TD ) . ':: ' . $product?->get_name() );
+			throw new Exception( __( 'Error in ordering', SPWL_TD ) . ':: ' . $product->get_name() );
 		}
 	}
 
