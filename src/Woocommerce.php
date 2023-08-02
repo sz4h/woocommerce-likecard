@@ -104,7 +104,7 @@ class Woocommerce {
 	 * @return void
 	 * @throws Exception
 	 */
-	public function getProductsAvailability( array $ids, mixed $product = null ): void {
+	public function getProductsAvailability( array $ids, bool|null|WC_Product $product = null ): void {
 		try {
 			$response = $this->likecard_api->post( 'products', [
 				'ids' => $ids
