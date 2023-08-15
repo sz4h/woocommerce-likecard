@@ -62,12 +62,13 @@ class Woocommerce {
 				return;
 			}
 			$order   = wc_get_order( $order_id );
+			dd($order);
 			$serials = [];
 			foreach ( $response['serials'] as $serial ) {
 				$code    = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
 				$product = $cartItem['data'];
 				$name    = $product ? $product->get_name() : '';
-				$serials = [ 'name' => $name, 'serial' => $code, 'valid' => @$serial['validTo'] ];
+				$serials = [ 'item_id' => $cartItem[''], 'name' => $name, 'serial' => $code, 'valid' => @$serial['validTo'] ];
 				$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $name, $code, @$serial['validTo'] ) );
 			}
 			add_post_meta( $order_id, 'serials', $serials);
