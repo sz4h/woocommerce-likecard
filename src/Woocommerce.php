@@ -14,16 +14,23 @@ class Woocommerce {
 
 	public function __construct() {
 		$this->createApiInstance();
+		add_action( 'wp_enqueue_scripts', [$this,'enqueue_scripts']);
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
 //		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
 		add_action( 'woocommerce_checkout_create_order_line_item', [
 			$this,
 			'woocommerce_checkout_create_order_line_item'
 		], 30, 4 );
-		add_action( 'woocommerce_order_details_after_order_table', [
-			$this,
-			'woocommerce_order_details_after_order_table'
-		] );
+		add_action( 'woocommerce_order_item_meta_end', [ $this, 'woocommerce_order_item_meta_end' ], 20, 4 );
+//		add_action( 'woocommerce_order_details_after_order_table', [
+//			$this,
+//			'woocommerce_order_details_after_order_table'
+//		] );
+	}
+
+	public function enqueue_scripts(  ): void {
+		if (is_view_order_page())
+			wp_enqueue_style( 'lineawesome','https://maxst.icons8.com/vue-static/landings/line-awesome/font-awesome-line-awesome/css/all.min.css');
 	}
 
 	/**
@@ -47,8 +54,7 @@ class Woocommerce {
 		} catch ( Exception $e ) {
 			$this->failed( [ $e->getMessage() ] );
 		}
-		$time     = time();
-		$cartItem = WC()->cart->get_cart()[ $cart_item_key ];
+		$time = time();
 
 		try {
 			$response = $this->likecard_api->post( 'create_order', [
@@ -56,7 +62,7 @@ class Woocommerce {
 				'hash'        => $this->likecard_api->generateHash( $time ),
 				'referenceId' => $order->get_id() . '_' . $product->get_id(),
 				'productId'   => $likeCardId,
-				'quantity'    => $cartItem['quantity'],
+				'quantity'    => $item->get_quantity(),
 			] );
 		} catch ( ApiException $e ) {
 			$this->failed( [ $e->getMessage() ] );
@@ -66,7 +72,7 @@ class Woocommerce {
 			return;
 		}
 
-		$serials = $item->get_meta( 'codes' ) ?? [];
+		$serials = $item->get_meta( 'codes' ) ?: [];
 		foreach ( $response['serials'] as $serial ) {
 			$code      = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
 			$serials[] = [
@@ -76,8 +82,17 @@ class Woocommerce {
 
 			$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $product->get_name(), $code, @$serial['validTo'] ) );
 		}
-		$item->add_meta_data( 'serials', $serials );
-		dd( $serials );
+		$item->update_meta_data( 'serials', $serials );
+	}
+
+	public function woocommerce_order_item_meta_end( $item_id, WC_Order_Item_Product $item, $order, $bool = false ): void {
+		$serials = $item->get_meta( 'serials' ) ?: null;
+		if ( ! $serials || count( $serials ) == 0 ) {
+			return;
+		}
+		foreach ( $serials as $serial ) {
+			include SPWL_PATH . 'templates/like-card-serial.php';
+		}
 	}
 
 	/**
@@ -100,7 +115,6 @@ class Woocommerce {
 		$time  = time();
 		$order = wc_get_order( $order_id );
 
-		dd( $order->get_items(), $likeCardIds, WC()->cart->get_cart() );
 
 		foreach ( $likeCardIds as $cart_item_key => $like_card_id ) {
 			$cartItem = WC()->cart->get_cart()[ $cart_item_key ];
