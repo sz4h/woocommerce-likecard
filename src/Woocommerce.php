@@ -4,6 +4,8 @@ namespace Sz4h\WoocommerceLikecard;
 
 use Exception;
 use Sz4h\WoocommerceLikecard\Exception\ApiException;
+use WC_Order;
+use WC_Order_Item_Product;
 use WC_Product;
 
 class Woocommerce {
@@ -21,7 +23,7 @@ class Woocommerce {
 		add_action( 'woocommerce_order_details_after_order_table', [
 			$this,
 			'woocommerce_order_details_after_order_table'
-		], 10, 1 );
+		] );
 	}
 
 	/**
@@ -37,16 +39,50 @@ class Woocommerce {
 		$this->getProductsAvailability( [ $likeCardId ], $product );
 	}
 
-	public function woocommerce_checkout_create_order_line_item( $item, $cart_item_key, $values, $order ) {
-		dd( $item, $cart_item_key, $values, $order );
-		$likeCardIds                      = [];
-		$product                          = $cart_item['data'];
-		$likeCardIds[ $cart_item['key'] ] = $product ? (int) $product->get_meta( 'sz4h_likecard_id' ) : null;
+	public function woocommerce_checkout_create_order_line_item( WC_Order_Item_Product $item, string $cart_item_key, array $values, WC_Order $order ): void {
+		$product    = $item->get_product();
+		$likeCardId = $product ? (int) $product->get_meta( 'sz4h_likecard_id' ) : null;
+		try {
+			$this->getProductsAvailability( [ $likeCardId ] );
+		} catch ( Exception $e ) {
+			$this->failed( [ $e->getMessage() ] );
+		}
+		$time     = time();
+		$cartItem = WC()->cart->get_cart()[ $cart_item_key ];
+
+		try {
+			$response = $this->likecard_api->post( 'create_order', [
+				'time'        => $time,
+				'hash'        => $this->likecard_api->generateHash( $time ),
+				'referenceId' => $order->get_id() . '_' . $product->get_id(),
+				'productId'   => $likeCardId,
+				'quantity'    => $cartItem['quantity'],
+			] );
+		} catch ( ApiException $e ) {
+			$this->failed( [ $e->getMessage() ] );
+		}
+
+		if ( ! isset( $response['serials'] ) || ! count( (array) $response['serials'] ) ) {
+			return;
+		}
+
+		$serials = $item->get_meta( 'codes' ) ?? [];
+		foreach ( $response['serials'] as $serial ) {
+			$code      = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
+			$serials[] = [
+				'serial' => $code,
+				'valid'  => @$serial['validTo']
+			];
+
+			$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $product->get_name(), $code, @$serial['validTo'] ) );
+		}
+		$item->add_meta_data( 'serials', $serials );
+		dd( $serials );
 	}
 
 	/**
 	 * @throws Exception
-	 */
+	 *//*
 	public function order_creation( $order_id ): void {
 		$likeCardIds = [];
 		foreach ( WC()->cart->get_cart() as $cart_item ) {
@@ -96,7 +132,7 @@ class Woocommerce {
 			add_post_meta( $order_id, 'serials', $serials );
 		}
 
-	}
+	}*/
 
 	public function woocommerce_order_details_after_order_table( $order ): void {
 		$serials = get_post_meta( $order->get_id(), 'serials' );
@@ -110,7 +146,7 @@ class Woocommerce {
 
 	protected function failed( array $errors, bool $refresh = false, bool $reload = false ): void {
 		$errors     = '<li>' . implode( '</li><li>', $errors );
-		$errorsHtml = "<ul class=\"woocommerce-error\" role=\"alert\">\n\t\t\t$errors\n\t</ul>\n";
+		$errorsHtml = "<ul class=\"woocommerce-error\" role=\"list\">\n\t\t\t$errors\n\t</ul>\n";
 		echo json_encode( [
 			'result'   => 'failure',
 			'messages' => $errorsHtml,
