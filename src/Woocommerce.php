@@ -15,12 +15,15 @@ class Woocommerce {
 	public function __construct() {
 		$this->createApiInstance();
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
+
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
 //		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
 		add_action( 'woocommerce_checkout_create_order_line_item', [
 			$this,
 			'woocommerce_checkout_create_order_line_item'
 		], 30, 4 );
+
+		/* Show in order details */
 		add_action( 'woocommerce_order_item_meta_end', [ $this, 'woocommerce_order_item_meta_end' ], 20, 4 );
 		add_action( 'woocommerce_after_order_details', [ $this, 'woocommerce_after_order_details' ], 20, 1 );
 //		add_action( 'woocommerce_order_details_after_order_table', [
@@ -40,8 +43,13 @@ class Woocommerce {
 	 * @throws Exception
 	 */
 	function add_to_cart( $cart_id, $productId, $quantity, $variation_id, $variation, $cart_item_data ): void {
-		$product    = wc_get_product( $productId );
-		$likeCardId = (int) $product->get_meta( 'sz4h_likecard_id' );
+		$product = wc_get_product( $productId );
+
+		if ( $variation_id ) {
+			$likeCardId = (int) get_post_meta( $variation_id, 'sz4h_likecard_id', true );
+		} else {
+			$likeCardId = (int) $product->get_meta( 'sz4h_likecard_id' );
+		}
 		if ( $likeCardId === 0 ) {
 			return;
 		}
