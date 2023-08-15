@@ -12,5 +12,16 @@
 
 .like-table {
     text-align: center;
+    border-collapse: collapse;
+    width: 100%;
+}
+.like-table th, .like-table td,.like-table input {
+    text-align: center !important;
+    border-collapse: collapse;
+    border: none;
+    outline: none;
+}
 
+.like-table i {
+    font-size: 1.5rem;
 }
