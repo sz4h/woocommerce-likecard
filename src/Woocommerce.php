@@ -14,7 +14,7 @@ class Woocommerce {
 
 	public function __construct() {
 		$this->createApiInstance();
-		add_action( 'wp_enqueue_scripts', [$this,'enqueue_scripts']);
+		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
 //		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
 		add_action( 'woocommerce_checkout_create_order_line_item', [
@@ -22,15 +22,17 @@ class Woocommerce {
 			'woocommerce_checkout_create_order_line_item'
 		], 30, 4 );
 		add_action( 'woocommerce_order_item_meta_end', [ $this, 'woocommerce_order_item_meta_end' ], 20, 4 );
+		add_action( 'woocommerce_after_order_details', [ $this, 'woocommerce_after_order_details' ], 20, 1 );
 //		add_action( 'woocommerce_order_details_after_order_table', [
 //			$this,
 //			'woocommerce_order_details_after_order_table'
 //		] );
 	}
 
-	public function enqueue_scripts(  ): void {
-		if (is_view_order_page())
-			wp_enqueue_style( 'lineawesome','https://maxst.icons8.com/vue-static/landings/line-awesome/font-awesome-line-awesome/css/all.min.css');
+	public function enqueue_scripts(): void {
+		if ( is_view_order_page() ) {
+			wp_enqueue_style( 'lineawesome', 'https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css' );
+		}
 	}
 
 	/**
@@ -87,14 +89,16 @@ class Woocommerce {
 
 	public function woocommerce_order_item_meta_end( $item_id, WC_Order_Item_Product $item, $order, $bool = false ): void {
 		$serials = $item->get_meta( 'serials' ) ?: null;
+
 		if ( ! $serials || count( $serials ) == 0 ) {
 			return;
 		}
-		foreach ( $serials as $serial ) {
-			include SPWL_PATH . 'templates/like-card-serial.php';
-		}
+		include SPWL_PATH . 'templates/like-card-serial.php';
 	}
 
+	public function woocommerce_after_order_details(): void {
+		include SPWL_PATH . 'templates/like-card-serial-js.php';
+	}
 	/**
 	 * @throws Exception
 	 *//*
