@@ -2,7 +2,7 @@
     "name": "sz4h/woocommerce-likecard",
     "description": "A Woocommerce plugin for Like4Card integeration",
     "license": "GPL",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "autoload": {
         "psr-4": {
             "Sz4h\\WoocommerceLikecard\\": "src/"
