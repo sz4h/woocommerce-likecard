@@ -48,6 +48,10 @@ class Woocommerce {
 			}
 		}
 		$time = time();
+		$order   = wc_get_order( $order_id );
+
+		dd($order->get_items(),$likeCardIds, WC()->cart->get_cart());
+
 		foreach ( $likeCardIds as $cart_item_key => $like_card_id ) {
 			$cartItem = WC()->cart->get_cart()[ $cart_item_key ];
 
@@ -61,8 +65,7 @@ class Woocommerce {
 			if ( ! isset( $response['serials'] ) || ! count( (array) $response['serials'] ) ) {
 				return;
 			}
-			$order   = wc_get_order( $order_id );
-			dd($order);
+
 			$serials = [];
 			foreach ( $response['serials'] as $serial ) {
 				$code    = $this->likecard_api->decryptSerial( @$serial['serialCode'] );

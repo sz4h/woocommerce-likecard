@@ -7,10 +7,12 @@ if ( ! function_exists( 'dd' ) ) {
 	 *
 	 * @return void
 	 */
-	function dd( mixed $value ): void {
-		echo '<pre>';
-		var_dump( $value );
-		echo '</pre>';
+	function dd( mixed ...$value ): void {
+		foreach ( func_get_args() as $item ) {
+			echo '<pre>';
+			var_dump( $item );
+			echo '</pre>';
+		}
 		die();
 	}
 }
