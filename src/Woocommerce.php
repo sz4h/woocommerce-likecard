@@ -14,7 +14,6 @@ class Woocommerce {
 
 	public function __construct() {
 		$this->createApiInstance();
-		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
 
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
 //		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
@@ -30,12 +29,6 @@ class Woocommerce {
 //			$this,
 //			'woocommerce_order_details_after_order_table'
 //		] );
-	}
-
-	public function enqueue_scripts(): void {
-		if ( is_view_order_page() ) {
-			wp_enqueue_style( 'lineawesome', 'https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css' );
-		}
 	}
 
 	/**
@@ -57,8 +50,12 @@ class Woocommerce {
 	}
 
 	public function woocommerce_checkout_create_order_line_item( WC_Order_Item_Product $item, string $cart_item_key, array $values, WC_Order $order ): void {
+		$productId  = $item->get_variation_id() ?? $item->get_product_id();
 		$product    = $item->get_product();
-		$likeCardId = $product ? (int) $product->get_meta( 'sz4h_likecard_id' ) : null;
+		$likeCardId = (int) get_post_meta( $productId, 'sz4h_likecard_id', true );
+		if ( $likeCardId === 0 ) {
+			return;
+		}
 		try {
 			$this->getProductsAvailability( [ $likeCardId ] );
 		} catch ( Exception $e ) {
@@ -70,7 +67,7 @@ class Woocommerce {
 			$response = $this->likecard_api->post( 'create_order', [
 				'time'        => $time,
 				'hash'        => $this->likecard_api->generateHash( $time ),
-				'referenceId' => $order->get_id() . '_' . $product->get_id(),
+				'referenceId' => $order->get_id() . '_' . $productId,
 				'productId'   => $likeCardId,
 				'quantity'    => $item->get_quantity(),
 			] );

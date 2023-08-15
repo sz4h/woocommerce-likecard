@@ -28,8 +28,11 @@ class Initializer {
 	}
 
 	function wp_enqueue_scripts() {
-		if ( is_view_order_page() ) {
+		if (!activate_plugin( 'woocommerce'))
+			return;
+		if ( is_view_order_page() || is_order_received_page() ) {
 			wp_enqueue_style( 'woocommerce-likecard', SPWL_URL . '/assets/css/woocommerce-likecard.css' );
+			wp_enqueue_style( 'lineawesome', 'https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css' );
 		}
 	}
 
