@@ -13,8 +13,15 @@ class Woocommerce {
 	public function __construct() {
 		$this->createApiInstance();
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
-		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
-		add_action( 'woocommerce_order_details_after_order_table', [ $this, 'woocommerce_order_details_after_order_table' ],10,1 );
+//		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
+		add_action( 'woocommerce_checkout_create_order_line_item', [
+			$this,
+			'woocommerce_checkout_create_order_line_item'
+		], 30, 4 );
+		add_action( 'woocommerce_order_details_after_order_table', [
+			$this,
+			'woocommerce_order_details_after_order_table'
+		], 10, 1 );
 	}
 
 	/**
@@ -28,6 +35,13 @@ class Woocommerce {
 			return;
 		}
 		$this->getProductsAvailability( [ $likeCardId ], $product );
+	}
+
+	public function woocommerce_checkout_create_order_line_item( $item, $cart_item_key, $values, $order ) {
+		dd( $item, $cart_item_key, $values, $order );
+		$likeCardIds                      = [];
+		$product                          = $cart_item['data'];
+		$likeCardIds[ $cart_item['key'] ] = $product ? (int) $product->get_meta( 'sz4h_likecard_id' ) : null;
 	}
 
 	/**
@@ -47,10 +61,10 @@ class Woocommerce {
 				$this->failed( [ $e->getMessage() ] );
 			}
 		}
-		$time = time();
-		$order   = wc_get_order( $order_id );
+		$time  = time();
+		$order = wc_get_order( $order_id );
 
-		dd($order->get_items(),$likeCardIds, WC()->cart->get_cart());
+		dd( $order->get_items(), $likeCardIds, WC()->cart->get_cart() );
 
 		foreach ( $likeCardIds as $cart_item_key => $like_card_id ) {
 			$cartItem = WC()->cart->get_cart()[ $cart_item_key ];
@@ -71,21 +85,26 @@ class Woocommerce {
 				$code    = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
 				$product = $cartItem['data'];
 				$name    = $product ? $product->get_name() : '';
-				$serials = [ 'item_id' => $cartItem[''], 'name' => $name, 'serial' => $code, 'valid' => @$serial['validTo'] ];
+				$serials = [
+					'item_id' => $cartItem[''],
+					'name'    => $name,
+					'serial'  => $code,
+					'valid'   => @$serial['validTo']
+				];
 				$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $name, $code, @$serial['validTo'] ) );
 			}
-			add_post_meta( $order_id, 'serials', $serials);
+			add_post_meta( $order_id, 'serials', $serials );
 		}
 
 	}
 
 	public function woocommerce_order_details_after_order_table( $order ): void {
-		$serials = get_post_meta( $order->get_id(),'serials' );
+		$serials = get_post_meta( $order->get_id(), 'serials' );
 		if ( ! $serials ) {
 			return;
 		}
 		foreach ( $serials as $serial ) {
-			echo '<div class="box">' . sprintf( __( 'Code for %s is: <span>%s</span> valid to %s',SPWL_TD ), $serial['name'], $serial['serial'], $serial['valid'] ) . '</div>';
+			echo '<div class="box">' . sprintf( __( 'Code for %s is: <span>%s</span> valid to %s', SPWL_TD ), $serial['name'], $serial['serial'], $serial['valid'] ) . '</div>';
 		}
 	}
 
