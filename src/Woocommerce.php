@@ -50,7 +50,7 @@ class Woocommerce {
 	}
 
 	public function woocommerce_checkout_create_order_line_item( WC_Order_Item_Product $item, string $cart_item_key, array $values, WC_Order $order ): void {
-		$productId  = $item->get_variation_id() ?? $item->get_product_id();
+		$productId  = $item->get_variation_id() ? $item->get_variation_id() : $item->get_product_id();
 		$product    = $item->get_product();
 		$likeCardId = (int) get_post_meta( $productId, 'sz4h_likecard_id', true );
 		if ( $likeCardId === 0 ) {
