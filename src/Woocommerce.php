@@ -1,10 +1,13 @@
-<?php
+<?php /** @noinspection PhpNoReturnAttributeCanBeAddedInspection */
+
+/** @noinspection PhpUnusedParameterInspection */
 
 namespace Sz4h\WoocommerceLikecard;
 
 use Exception;
 use Sz4h\WoocommerceLikecard\Exception\ApiException;
 use WC_Order;
+use WC_Order_Item;
 use WC_Order_Item_Product;
 use WC_Product;
 
@@ -16,20 +19,15 @@ class Woocommerce {
 		$this->createApiInstance();
 
 		add_action( 'woocommerce_add_to_cart', [ $this, 'add_to_cart' ], 10, 6 );
-//		add_action( 'woocommerce_new_order', [ $this, 'order_creation' ], 30, 1 );
-		add_action( 'woocommerce_checkout_create_order_line_item', [
-			$this,
-			'woocommerce_checkout_create_order_line_item'
-		], 30, 4 );
 
+
+		add_action( 'woocommerce_pre_payment_complete', [ $this, 'woocommerce_payment_complete' ], 10, 2 );
+		add_action( 'woocommerce_order_status_completed', [ $this, 'woocommerce_payment_complete' ], 10, 2 );
 		/* Show in order details */
 		add_action( 'woocommerce_order_item_meta_end', [ $this, 'woocommerce_order_item_meta_end' ], 20, 4 );
-		add_action( 'woocommerce_after_order_details', [ $this, 'woocommerce_after_order_details' ], 20, 1 );
-//		add_action( 'woocommerce_order_details_after_order_table', [
-//			$this,
-//			'woocommerce_order_details_after_order_table'
-//		] );
+		add_action( 'woocommerce_after_order_details', [ $this, 'woocommerce_after_order_details' ], 20 );
 	}
+
 
 	/**
 	 * @throws ApiException
@@ -49,57 +47,60 @@ class Woocommerce {
 		$this->getProductsAvailability( [ $likeCardId ], $product );
 	}
 
-	public function woocommerce_checkout_create_order_line_item( WC_Order_Item_Product $item, string $cart_item_key, array $values, WC_Order $order ): void {
-		$productId  = $item->get_variation_id() ? $item->get_variation_id() : $item->get_product_id();
-		$product    = $item->get_product();
-		$likeCardId = (int) get_post_meta( $productId, 'sz4h_likecard_id', true );
-		if ( $likeCardId === 0 ) {
+	public function woocommerce_payment_complete( $order_id, $transaction_id = null ): void {
+		$order = wc_get_order( $order_id );
+		if ( $order->get_meta( 'likecard_completed' ) ) {
 			return;
 		}
+		$items        = $order->get_items();
+		$cardProducts = $this->getCardProducts( $items );
+		if ( count( $cardProducts ) === 0 ) {
+			$this->completeOrderLikeCardProcess( $order );
+			return;
+		}
+
+		$likeCardIds = array_map( fn( $item ) => $item['productId'], $cardProducts );
+
+		/* Check Cards Availability */
 		try {
-			$this->getProductsAvailability( [ $likeCardId ] );
+			$this->getProductsAvailability( $likeCardIds );
 		} catch ( Exception $e ) {
 			$this->failed( [ $e->getMessage() ] );
 		}
+		$createOrderResponse      = $this->createBulkOrder( $order, $cardProducts );
+		$bulkOrderDetailsResponse = $this->getBulkOrderDetails( $createOrderResponse );
 
-		$serials = $item->get_meta( 'codes' ) ?: [];
-
-		for ($i=0;$i<$item->get_quantity();$i++) {
-			$time = time();
-
-			try {
-				$response = $this->likecard_api->post( 'create_order', [
-					'time'        => $time,
-					'hash'        => $this->likecard_api->generateHash( $time ),
-					'referenceId' => $order->get_id() . '_' . $productId,
-					'productId'   => $likeCardId,
-					'quantity'    => $item->get_quantity(),
-				] );
-			} catch ( ApiException $e ) {
-				$this->failed( [ $e->getMessage() ] );
-			}
-
-			if ( ! isset( $response['serials'] ) || ! count( (array) $response['serials'] ) ) {
-				return;
-			}
-
-
-			foreach ( $response['serials'] as $serial ) {
-				$code      = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
-				$serials[] = [
-					'serial' => $code,
-					'valid'  => @$serial['validTo']
-				];
-
-				$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $product->get_name(), $code, @$serial['validTo'] ) );
-			}
+		if ( ! isset( $bulkOrderDetailsResponse['orders'] ) || ! count( (array) $bulkOrderDetailsResponse['orders'] ) ) {
+			return;
 		}
-		$item->update_meta_data( 'serials', $serials );
+
+		$mapping         = $this->getSerialCodesFromResponse( $bulkOrderDetailsResponse['orders'] );
+		$storeProductIds = array_column( $cardProducts, 'storeProductId' );
+
+		foreach ( $items as $item ) {
+			$productId = $this->getOriginalItemId( $item );
+			if ( ! in_array( $productId, $storeProductIds ) ) {
+				continue;
+			}
+
+			$likeCardId = (int) get_post_meta( $productId, 'sz4h_likecard_id', true );
+			$serials    = $item->get_meta( 'serials' ) ?: [];
+
+			foreach ( $mapping[ $likeCardId ] as $codes ) {
+				foreach ( $codes as $code ) {
+					$serials[] = $code;
+					$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $item->get_name(), $code['serial'], @$code['validTo'] ) );
+				}
+			}
+			$item->update_meta_data( 'serials', $serials );
+			$item->save_meta_data();
+		}
+		$this->completeOrderLikeCardProcess( $order );
 	}
 
 	public function woocommerce_order_item_meta_end( $item_id, WC_Order_Item_Product $item, $order, $bool = false ): void {
 		$serials = $item->get_meta( 'serials' ) ?: null;
-
+//dd($serials);
 		if ( ! $serials || count( $serials ) == 0 ) {
 			return;
 		}
@@ -109,68 +110,7 @@ class Woocommerce {
 	public function woocommerce_after_order_details(): void {
 		include SPWL_PATH . 'templates/like-card-serial-js.php';
 	}
-	/**
-	 * @throws Exception
-	 *//*
-	public function order_creation( $order_id ): void {
-		$likeCardIds = [];
-		foreach ( WC()->cart->get_cart() as $cart_item ) {
-			$product                          = $cart_item['data'];
-			$likeCardIds[ $cart_item['key'] ] = $product ? (int) $product->get_meta( 'sz4h_likecard_id' ) : null;
-		}
-		$likeCardIds = array_filter( $likeCardIds );
-		if ( count( $likeCardIds ) ) {
-			try {
-				$this->getProductsAvailability( $likeCardIds );
-			} catch ( Exception $e ) {
-				$this->failed( [ $e->getMessage() ] );
-			}
-		}
-		$time  = time();
-		$order = wc_get_order( $order_id );
 
-
-		foreach ( $likeCardIds as $cart_item_key => $like_card_id ) {
-			$cartItem = WC()->cart->get_cart()[ $cart_item_key ];
-
-			$response = $this->likecard_api->post( 'create_order', [
-				'time'        => $time,
-				'hash'        => $this->likecard_api->generateHash( $time ),
-				'referenceId' => $order_id . '_' . $cartItem['product_id'],
-				'productId'   => $like_card_id,
-				'quantity'    => $cartItem['quantity'],
-			] );
-			if ( ! isset( $response['serials'] ) || ! count( (array) $response['serials'] ) ) {
-				return;
-			}
-
-			$serials = [];
-			foreach ( $response['serials'] as $serial ) {
-				$code    = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
-				$product = $cartItem['data'];
-				$name    = $product ? $product->get_name() : '';
-				$serials = [
-					'item_id' => $cartItem[''],
-					'name'    => $name,
-					'serial'  => $code,
-					'valid'   => @$serial['validTo']
-				];
-				$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $name, $code, @$serial['validTo'] ) );
-			}
-			add_post_meta( $order_id, 'serials', $serials );
-		}
-
-	}*/
-
-	public function woocommerce_order_details_after_order_table( $order ): void {
-		$serials = get_post_meta( $order->get_id(), 'serials' );
-		if ( ! $serials ) {
-			return;
-		}
-		foreach ( $serials as $serial ) {
-			echo '<div class="box">' . sprintf( __( 'Code for %s is: <span>%s</span> valid to %s', SPWL_TD ), $serial['name'], $serial['serial'], $serial['valid'] ) . '</div>';
-		}
-	}
 
 	protected function failed( array $errors, bool $refresh = false, bool $reload = false ): void {
 		$errors     = '<li>' . implode( '</li><li>', $errors );
@@ -202,15 +142,15 @@ class Woocommerce {
 				throw new Exception( __( 'Error in ordering', SPWL_TD ) . ' No data' );
 			}
 			$names = [];
-			foreach ( $response['data'] as $product ) {
-				if ( ! $product['available'] ) {
-					$names[] = @$product['productName'];
+			foreach ( $response['data'] as $p ) {
+				if ( ! $p['available'] ) {
+					$names[] = @$p['productName'];
 				}
 			}
 			if ( count( $names ) ) {
 				throw new Exception( __( 'Error in ordering', SPWL_TD ) . ' (' . implode( ',', $names ) . ').' );
 			}
-		} catch ( ApiException $e ) {
+		} catch ( ApiException ) {
 			throw new Exception( __( 'Error in ordering', SPWL_TD ) . ':: ' . $product->get_name() );
 		}
 	}
@@ -233,5 +173,115 @@ class Woocommerce {
 			->set_hash_key( $options['hashKey'] )
 			->set_secret_key( $options['secretKey'] )
 			->set_secret_iv( $options['secretIv'] );
+	}
+
+
+	function getCardProducts( array $items ): array {
+		$products = [];
+
+		foreach ( $items as $item ) {
+			/** @var WC_Order_Item_Product $item */
+			$productId = $this->getLikeCardId( $item );
+			if ( ! $productId ) {
+				continue;
+			}
+			$products[] = [
+				'productId'      => $productId,
+				'storeProductId' => $this->getOriginalItemId( $item ),
+				'quantity'       => $item->get_quantity(),
+			];
+		}
+
+		return $products;
+	}
+
+	private function getLikeCardId( WC_Order_Item_Product|WC_Order_Item $item ): ?int {
+		$productId  = $this->getOriginalItemId( $item );
+		$likeCardId = (int) get_post_meta( $productId, 'sz4h_likecard_id', true );
+
+		return $likeCardId !== 0 ? $likeCardId : null;
+	}
+
+	/**
+	 * @param WC_Order|bool $order
+	 * @param array $cardProducts
+	 *
+	 * @return mixed
+	 */
+	public function createBulkOrder( WC_Order|bool $order, array $cardProducts ): mixed {
+		$time        = time();
+		$referenceId = "{$order->get_id()}_order_$time";
+		$response    = null;
+		try {
+			$response = $this->likecard_api->post( 'create_order/bulk', [
+				'time'        => $time,
+				'hash'        => $this->likecard_api->generateHash( $time ),
+				'referenceId' => $referenceId,
+				'products'    => json_encode( $cardProducts ),
+			] );
+		} catch ( ApiException $e ) {
+			$this->failed( [ $e->getMessage() ] );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * @param mixed $createOrderResponse
+	 *
+	 * @return mixed
+	 */
+	public function getBulkOrderDetails( mixed $createOrderResponse ): mixed {
+		$response = null;
+		try {
+			$response = $this->likecard_api->post( 'get_bulk_order', [
+				'bulkOrderId' => $createOrderResponse['bulkOrderId'],
+			] );
+		} catch ( ApiException $ee ) {
+			$this->failed( [ $ee->getMessage() ] );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * @param $orders
+	 *
+	 * @return array
+	 */
+	public function getSerialCodesFromResponse( $orders ): array {
+		$mapping = [];
+		foreach ( $orders as $likeCardOrder ) {
+			$serials = [];
+			foreach ( $likeCardOrder['serials'] as $serial ) {
+				$code      = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
+				$serials[] = [
+					'serial' => $code,
+					'valid'  => @$serial['validTo']
+				];
+			}
+			$mapping[ $likeCardOrder['productId'] ][] = $serials;
+		}
+
+		return $mapping;
+	}
+
+	/**
+	 * @param WC_Order_Item_Product|WC_Order_Item $item
+	 *
+	 * @return int
+	 */
+	public function getOriginalItemId( WC_Order_Item_Product|WC_Order_Item $item ): int {
+		return $item->get_variation_id() ? $item->get_variation_id() : $item->get_product_id();
+	}
+
+	/**
+	 * @param WC_Order|bool|\WC_Order_Refund $order
+	 *
+	 * @return void
+	 */
+	public function completeOrderLikeCardProcess( WC_Order|bool|\WC_Order_Refund $order ): void {
+		$order->update_meta_data( 'likecard_completed', 1 );
+		$order->save_meta_data();
 	}
 }

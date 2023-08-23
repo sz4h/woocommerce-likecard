@@ -4,7 +4,7 @@
  * Description:
  * Plugin URI: https://sz4h.com/
  * Author: Ahmed Safaa
- * Version: 1.0.9
+ * Version: 1.1.0
  * Author URI: https://sz4h.com/
  *
  * Text Domain: space-woocommerce-likecard

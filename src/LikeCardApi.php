@@ -2,7 +2,6 @@
 
 namespace Sz4h\WoocommerceLikecard;
 
-use Exception;
 use Sz4h\WoocommerceLikecard\Exception\ApiException;
 
 class LikeCardApi {
@@ -48,9 +47,9 @@ class LikeCardApi {
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 			if ( is_null( $body ) || ! isset( $body['response'] ) || $body['response'] !== 1 ) {
-				throw new ApiException( __( 'Error in ordering', SPWL_TD ) . ' No response'  );
+				throw new ApiException( __( 'Error in ordering', SPWL_TD ) . ' No response' . json_encode( $body) );
 			}
-	
+
 
 			return $body;
 		} else {
@@ -86,12 +85,6 @@ class LikeCardApi {
 		return $this->base;
 	}
 
-	/**
-	 * @param string $base
-	 */
-	public function set_base( string $base ): void {
-		$this->base = $base;
-	}
 
 	/**
 	 * @return string
@@ -171,18 +164,6 @@ class LikeCardApi {
 	public function get_timeout(): int {
 		return $this->timeout;
 	}
-
-	/**
-	 * @param int $timeout
-	 *
-	 * @return LikeCardApi
-	 */
-	public function set_timeout( int $timeout ): LikeCardApi {
-		$this->timeout = $timeout;
-
-		return $this;
-	}
-
 	/**
 	 * @return int
 	 */
@@ -190,16 +171,6 @@ class LikeCardApi {
 		return $this->langId;
 	}
 
-	/**
-	 * @param int $langId
-	 *
-	 * @return LikeCardApi
-	 */
-	public function set_lang_id( int $langId ): LikeCardApi {
-		$this->langId = $langId;
-
-		return $this;
-	}
 
 	/**
 	 * @return string
@@ -251,6 +222,7 @@ class LikeCardApi {
 	 */
 	public function set_secret_key( string $secretKey ): LikeCardApi {
 		$this->secretKey = $secretKey;
+
 		return $this;
 	}
 
@@ -268,6 +240,7 @@ class LikeCardApi {
 	 */
 	public function set_secret_iv( string $secretIv ): LikeCardApi {
 		$this->secretIv = $secretIv;
+
 		return $this;
 	}
 }
