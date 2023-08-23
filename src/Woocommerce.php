@@ -61,33 +61,38 @@ class Woocommerce {
 		} catch ( Exception $e ) {
 			$this->failed( [ $e->getMessage() ] );
 		}
-		$time = time();
-
-		try {
-			$response = $this->likecard_api->post( 'create_order', [
-				'time'        => $time,
-				'hash'        => $this->likecard_api->generateHash( $time ),
-				'referenceId' => $order->get_id() . '_' . $productId,
-				'productId'   => $likeCardId,
-				'quantity'    => $item->get_quantity(),
-			] );
-		} catch ( ApiException $e ) {
-			$this->failed( [ $e->getMessage() ] );
-		}
-
-		if ( ! isset( $response['serials'] ) || ! count( (array) $response['serials'] ) ) {
-			return;
-		}
 
 		$serials = $item->get_meta( 'codes' ) ?: [];
-		foreach ( $response['serials'] as $serial ) {
-			$code      = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
-			$serials[] = [
-				'serial' => $code,
-				'valid'  => @$serial['validTo']
-			];
 
-			$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $product->get_name(), $code, @$serial['validTo'] ) );
+		for ($i=0;$i<$item->get_quantity();$i++) {
+			$time = time();
+
+			try {
+				$response = $this->likecard_api->post( 'create_order', [
+					'time'        => $time,
+					'hash'        => $this->likecard_api->generateHash( $time ),
+					'referenceId' => $order->get_id() . '_' . $productId,
+					'productId'   => $likeCardId,
+					'quantity'    => $item->get_quantity(),
+				] );
+			} catch ( ApiException $e ) {
+				$this->failed( [ $e->getMessage() ] );
+			}
+
+			if ( ! isset( $response['serials'] ) || ! count( (array) $response['serials'] ) ) {
+				return;
+			}
+
+
+			foreach ( $response['serials'] as $serial ) {
+				$code      = $this->likecard_api->decryptSerial( @$serial['serialCode'] );
+				$serials[] = [
+					'serial' => $code,
+					'valid'  => @$serial['validTo']
+				];
+
+				$order->add_order_note( sprintf( __( 'Code for %s is: %s and it\'s valid to %s', SPWL_TD ), $product->get_name(), $code, @$serial['validTo'] ) );
+			}
 		}
 		$item->update_meta_data( 'serials', $serials );
 	}

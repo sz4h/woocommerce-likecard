@@ -12,8 +12,13 @@
 
 .like-table {
     text-align: center;
+    margin-top: 1rem;
     border-collapse: collapse;
     width: 100%;
+    display: block;
+    border: 1px solid #333;
+    border-radius: 1rem;
+    padding: 0.5rem;
 }
 .like-table th, .like-table td,.like-table input {
     text-align: center !important;
@@ -21,7 +26,25 @@
     border: none;
     outline: none;
 }
+.like-table input {
+    padding: 1px !important;
+}
+
+.like-table th,.like-table td {
+    width: 90%;
+    padding: 0;
+    max-width: 90%;
+}
+.like-table th:first-child, .like-table td:first-child, .like-table th:last-child, .like-table td:last-child
+{
+    width: 5%;
+    max-width: 5%;
+}
 
 .like-table i {
     font-size: 1.5rem;
+}
+.woocommerce-table__product-name.product-name {
+    width: 80%;
+    max-width: 80%;
 }
